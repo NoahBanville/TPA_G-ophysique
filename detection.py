@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 
 dossier = r"C:\Users\noah\OneDrive - Université Laval\A26\Travaux pratiques avancés\géophysique\Data"
 #changer dans votre répertoire
@@ -66,6 +67,8 @@ def temps_arrivee(fichier):
 # boucle pour les scopes
 print(f"{'fichier':<14}{'géophone':>9}{'distance (m)':>14}{'temps (ms)':>12}")
 
+x, t = [], []
+
 for debut, fin, d in groupes:
     for n in range(debut, fin + 1):
         nom = f"scope_{n}.csv"
@@ -78,3 +81,14 @@ for debut, fin, d in groupes:
         temps = temps_arrivee(chemin)
         for k in range(3):
             print(f"{nom:<14}{k + 1:>9}{d + k * espacement:>14.2f}{temps[k]:>12.2f}")
+            x.append(d + k * espacement)
+            t.append(temps[k])
+            
+plt.plot(x, t, "o", color="k", ms=4)
+plt.xlabel("Distance (m)")
+plt.ylabel("Temps (ms)")
+plt.xlim(0)
+plt.ylim(0)
+plt.grid(alpha=0.5)
+plt.show()
+            
