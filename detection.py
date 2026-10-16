@@ -109,6 +109,31 @@ print(f"{'distance (m)':>12}{'n':>4}{'moyenne (ms)':>14}{'incertitude (ms)':>18}
 for k in range(len(xs)):
     print(f"{xs[k]:>12.2f}{n[k]:>4}{t_moy[k]:>14.2f}{t_err[k]:>18.2f}")
 
+# ---------------- Vitesses des deux couches ----------------
+c1 = x <= 2                      # couche 1 : points de 0 à 2 m
+c2 = (x >= 3) & (x <= 7)         # couche 2 : points de 3 à 7 m
+(a1, b1), cov1 = np.polyfit(x[c1], t[c1], 1, cov=True)   # t = a1 x + b1
+(a2, b2), cov2 = np.polyfit(x[c2], t[c2], 1, cov=True)   # t = a2 x + b2
+
+# pente en ms/m  ->  vitesse en m/s
+V1 = 1000 / a1
+V2 = 1000 / a2
+sV1 = V1 * np.sqrt(cov1[0, 0]) / a1
+sV2 = V2 * np.sqrt(cov2[0, 0]) / a2
+
+print(f"V1 = {V1:.0f} ± {sV1:.0f} m/s")
+print(f"V2 = {V2:.0f} ± {sV2:.0f} m/s")
+
+
+xc = (b2 - b1) / (a1 - a2)
+tc = a1 * xc + b1
+
+plt.plot([0, xc], [b1, tc], "--", label=f"V1 = {V1:.0f} m/s")
+plt.plot([xc, 7], [tc, a2 * 7 + b2], "--", label=f"V2 = {V2:.0f} m/s")
+plt.axvline(xc, color="black", ls="-.")
+plt.legend()
+print(f"Point de rencontre : x = {xc:.2f} m, t = {tc:.1f} ms")
+
 plt.errorbar(xs, t_moy, yerr=t_err, fmt="o", color="k", ms=4, capsize=3)
 plt.xlabel("Distance (m)")
 plt.ylabel("Temps moyen (ms)")
