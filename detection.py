@@ -6,7 +6,7 @@ dossier = r"C:\Users\noah\OneDrive - Université Laval\A26\Travaux pratiques ava
 #changer dans votre répertoire
 
 espacement = 0.5    # distance entregéophones
-n_sigma = 5         # seuil de détection : n_sigma fois le bruit (à changer au besoin)
+n_sigma = 3         # seuil de détection : n_sigma fois le bruit (à changer au besoin)
 
 # (premier scope, dernier scope, distance source - géophone)
 # on ignore scope 45
@@ -51,7 +51,10 @@ def temps_arrivee(fichier):
         moy, sigma = np.mean(bruit), np.std(bruit)
 
         # 1) premier point après le coup qui sort du bruit
-        candidats = (t > t0) & (np.abs(v - moy) > n_sigma * sigma)
+        dehors = np.abs(v - moy) > n_sigma * sigma
+        # le signal doit rester hors du bruit 3 points de suite (0,3 ms)
+        dehors = dehors[:-2] & dehors[1:-1] & dehors[2:]
+        candidats = (t[:-2] > t0) & dehors
         if not candidats.any():
             temps.append(np.nan)
             continue
@@ -84,9 +87,26 @@ for debut, fin, d in groupes:
             x.append(d + k * espacement)
             t.append(temps[k])
             
-plt.plot(x, t, "o", color="k", ms=4)
+# ---------------- Moyenne à chaque distance ----------------
+x = np.round(np.array(x), 2)     
+t = np.array(t)
+ok = ~np.isnan(t)                # on enlève les géophones sans détection
+x, t = x[ok], t[ok]
+
+xs = np.unique(x)                                             # distances différentes
+t_moy = np.array([np.mean(t[x == d]) for d in xs])            # moyenne
+n = np.array([np.sum(x == d) for d in xs])                    # nombre de mesures
+t_std = np.array([np.std(t[x == d], ddof=1) if np.sum(x == d) > 1 else 0 for d in xs])
+t_err = t_std / np.sqrt(n)                                    # incertitude sur la moyenne
+
+print()
+print(f"{'distance (m)':>12}{'n':>4}{'moyenne (ms)':>14}{'incertitude (ms)':>18}")
+for k in range(len(xs)):
+    print(f"{xs[k]:>12.2f}{n[k]:>4}{t_moy[k]:>14.2f}{t_err[k]:>18.2f}")
+
+plt.errorbar(xs, t_moy, yerr=t_err, fmt="o", color="k", ms=4, capsize=3)
 plt.xlabel("Distance (m)")
-plt.ylabel("Temps (ms)")
+plt.ylabel("Temps moyen (ms)")
 plt.xlim(0)
 plt.ylim(0)
 plt.grid(alpha=0.5)
