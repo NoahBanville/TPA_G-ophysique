@@ -6,7 +6,7 @@ dossier = r"C:\Users\noah\OneDrive - Université Laval\A26\Travaux pratiques ava
 #changer dans votre répertoire
 
 espacement = 0.5    # distance entregéophones
-n_sigma = 3         # seuil de détection : n_sigma fois le bruit (à changer au besoin)
+n_sigma = 5         # seuil de détection : n_sigma fois le bruit (à changer au besoin)
 
 # (premier scope, dernier scope, distance source - géophone)
 # on ignore scope 45
@@ -26,15 +26,17 @@ groupes = [
     (36, 38, 2.5),
     (39, 41, 3.0),
     (42, 44, 5.0),
-    (46, 48, 6.0),
-    (49, 51, 3.5),
+    (45, 46, 6.0),
+    (48, 48, 3.5),
+    (50, 51, 3.5),
     (52, 54, 3.8),
     (55, 57, 4.2),
     (58, 60, 3.25),
     (61, 63, 3.1),
     (64, 66, 2.8),
 ]
-
+# géophones à ignorer (scope, géophone) : la première onde ne sort pas du bruit
+exclure = [(42, 2), (53, 2), (56, 2), (45, 1), (46, 1), (45, 2), (46, 2), (45, 3)]
 
 def temps_arrivee(fichier):
     data = np.loadtxt(fichier, delimiter=",", skiprows=2)
@@ -47,6 +49,7 @@ def temps_arrivee(fichier):
     temps = []
     for canal in [1, 2, 3]:
         v = data[:, canal]
+        v = np.convolve(v - np.mean(v[t < t0]), np.ones(5) / 5, mode="same")
         bruit = v[t < t0]
         moy, sigma = np.mean(bruit), np.std(bruit)
 
@@ -84,6 +87,8 @@ for debut, fin, d in groupes:
         temps = temps_arrivee(chemin)
         for k in range(3):
             print(f"{nom:<14}{k + 1:>9}{d + k * espacement:>14.2f}{temps[k]:>12.2f}")
+            if (n, k + 1) in exclure:
+                continue
             x.append(d + k * espacement)
             t.append(temps[k])
             
